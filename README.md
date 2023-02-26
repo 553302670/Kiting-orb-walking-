@@ -21,7 +21,11 @@
 ## 使用方法
 
 
-Uploading bandicam 2023-02-26 23-47-37-010.mp4…
+
+
+https://user-images.githubusercontent.com/56016301/221421952-cf39c459-181c-458e-a3ff-ad03aee34f03.mp4
+
+
 
 
 https://user-images.githubusercontent.com/56016301/221421896-71eb288d-0688-4e32-ae39-ad5b648d1dd5.mp4
