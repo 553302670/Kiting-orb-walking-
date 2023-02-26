@@ -1,4 +1,4 @@
-﻿using Kiting_orb_walking_.Modules;
+using Kiting_orb_walking_.Modules;
 using LowLevelInput.Hooks;
 using Newtonsoft.Json.Linq;
 using System;
@@ -18,6 +18,7 @@ namespace Kiting_orb_walking_
 
         private const string ActivePlayerEndpoint = @"https://127.0.0.1:2999/liveclientdata/activeplayer";
         private const string PlayerListEndpoint = @"https://127.0.0.1:2999/liveclientdata/playerlist";
+        //private const string GamestatsEndpoint = @"https://127.0.0.1:2999/liveclientdata/gamestats";
         private const string ChampionStatsEndpoint = @"https://raw.communitydragon.org/latest/game/data/characters/";
         private const string SettingsFile = @"settings\settings.json";
 
@@ -39,6 +40,7 @@ namespace Kiting_orb_walking_
         private static string ChampionName = string.Empty;
         private static string RawChampionName = string.Empty;
 
+        //private static double GameTime = 0;
         private static double ClientAttackSpeed = 0.625;
         private static double ChampionAttackCastTime = 0.625;
         private static double ChampionAttackTotalTime = 0.625;
@@ -48,17 +50,14 @@ namespace Kiting_orb_walking_
 
     
         // Ping值补偿，延迟高、输入有延迟
-        private static readonly double WindupBuffer = 1d / 15d;
+        private static double WindupBuffer = 1d / 15d;
 
         // 攻击频率
         private static readonly double MinInputDelay = 1d / 30d;
-
+        //private static readonly Random rnd = new Random();
         // 时间间隔
         private static readonly double OrderTickRate = 1d / 30d;
 
-#if DEBUG
-        private static int TimerCallbackCounter = 0;
-#endif
 
         // 计算前摇 计算方式详见https://leagueoflegends.fandom.com/wiki/Basic_attack#Attack_speed
         public static double GetSecondsPerAttack() => 1 / ClientAttackSpeed;
@@ -85,21 +84,26 @@ namespace Kiting_orb_walking_
             Console.CursorVisible = false;
 
             Console.Title = "Kiting(orb-walking)";
-
+            
             InputManager.Initialize();
             InputManager.OnKeyboardEvent += InputManager_OnKeyboardEvent;
             InputManager.OnMouseEvent += InputManager_OnMouseEvent;
 
             OrbWalkTimer.Elapsed += OrbWalkTimer_Elapsed;
-#if DEBUG
-            Timer callbackTimer = new Timer(16.66);
-            callbackTimer.Elapsed += Timer_CallbackLog;
-#endif
+
 
             Timer attackSpeedCacheTimer = new Timer(OrderTickRate);
             attackSpeedCacheTimer.Elapsed += AttackSpeedCacheTimer_Elapsed;
-
             attackSpeedCacheTimer.Start();
+
+            //Ping值补偿
+            /* 
+            Console.WriteLine("请输入游戏延迟(Ping)：");
+            WindupBuffer = 1/double.Parse(Console.ReadLine())*2;
+            */
+            WindupBuffer = CurrentSettings.Ping/1000d;
+
+
             Console.WriteLine($"请按住 '{(VirtualKeyCode)CurrentSettings.ActivationKey}键' 激活走砍");
 
             CheckLeagueProcess();
@@ -107,17 +111,6 @@ namespace Kiting_orb_walking_
             Console.ReadLine();
         }
 
-#if DEBUG
-        private static void Timer_CallbackLog(object sender, ElapsedEventArgs e)
-        {
-            if (TimerCallbackCounter > 1 || TimerCallbackCounter < 0)
-            {
-                Console.Clear();
-                Console.WriteLine("检测到计时器出错！");
-                throw new Exception("计时器不能同时运行！");
-            }
-        }
-#endif
 
         private static void InputManager_OnMouseEvent(VirtualKeyCode key, KeyState state, int x, int y)
         {
@@ -142,7 +135,12 @@ namespace Kiting_orb_walking_
             }
         }
 
-        // 初始化计时器
+        // 初始化计时器 DateTime
+        /*
+        private static double nextInput = default;
+        private static double nextMove = default;
+        private static double nextAttack = default;
+        */
         private static DateTime nextInput = default;
         private static DateTime nextMove = default;
         private static DateTime nextAttack = default;
@@ -151,15 +149,9 @@ namespace Kiting_orb_walking_
 
         private static void OrbWalkTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-#if DEBUG
-            owStopWatch.Start();
-            TimerCallbackCounter++;
-#endif
+
             if (!HasProcess || IsExiting || GetForegroundWindow() != LeagueProcess.MainWindowHandle)
             {
-#if DEBUG
-                TimerCallbackCounter--;
-#endif
 
                 return;
             }
@@ -172,7 +164,7 @@ namespace Kiting_orb_walking_
             if (true || nextInput < time)
             {
                 // 当攻击时间小于计时器时间运行
-                if (nextAttack < time)
+                if (nextAttack <= time)
                 {
                     // 计算下次输入计时器时间 = 当前时间 + 攻击频率
                     nextInput = time.AddSeconds(MinInputDelay);
@@ -182,28 +174,36 @@ namespace Kiting_orb_walking_
                     InputSimulator.Mouse.MouseClick(InputSimulator.Mouse.Buttons.Left);
                     InputSimulator.Keyboard.KeyUp((ushort)DirectInputKeys.DIK_A);
 
+
                     // 更新攻击计时器时间
                     var attackTime = DateTime.Now;
 
                     // 计算下次移动时间 = 前摇 + Ping值补偿
                     nextMove = attackTime.AddSeconds(GetBufferedWindupDuration());
                     // 计算下次攻击时间 = 每秒攻击次数
-                    nextAttack = attackTime.AddSeconds(GetSecondsPerAttack());
+                    if (ChampionName.Equals("复仇之矛"))
+                    {
+                        nextAttack = attackTime.AddSeconds(GetSecondsPerAttack() - GetBufferedWindupDuration());
+                    }
+                    else
+                    {
+                        nextAttack = attackTime.AddSeconds(GetSecondsPerAttack());
+                    }
+                    
                 }
-                // 当移动时间小于计时器时间运行
+                // 当移动时间小于计时器时间运行GetSecondsPerAttack()
                 else if (nextMove < time)
                 {
                     // 计算下次输入计时器时间 = 当前时间 + 攻击频率
                     nextInput = time.AddSeconds(MinInputDelay);
-
+                    nextMove = nextMove.AddSeconds(GetSecondsPerAttack()- GetWindupDuration());
                     // 移动操作
                     InputSimulator.Mouse.MouseClick(InputSimulator.Mouse.Buttons.Right);
+                    
+                    
                 }
             }
-#if DEBUG
-            TimerCallbackCounter--;
-            owStopWatch.Reset();
-#endif
+
         }
 
         //检测联盟是否在运行
@@ -227,6 +227,10 @@ namespace Kiting_orb_walking_
             HasProcess = false;
             LeagueProcess = null;
             //Console.Clear();
+            ChampionName = string.Empty;
+            IsIntializingValues = false;
+            IsUpdatingAttackValues = false;
+            
             Console.WriteLine("League Process Exited");
             CheckLeagueProcess();
         }
@@ -238,10 +242,11 @@ namespace Kiting_orb_walking_
                 IsUpdatingAttackValues = true;
 
                 JToken activePlayerToken = null;
-
+                //JToken gamestatsToken = null;
                 try
                 {
                     activePlayerToken = JToken.Parse(Client.DownloadString(ActivePlayerEndpoint));
+                   // gamestatsToken = JToken.Parse(Client.DownloadString(GamestatsEndpoint));
                 }
                 catch
                 {
@@ -263,29 +268,30 @@ namespace Kiting_orb_walking_
                             RawChampionName = rawNameArray[^1];
                         }
                     }
-
+                    
                     if (!GetChampionBaseValues(RawChampionName))
                     {
                         IsIntializingValues = false;
                         IsUpdatingAttackValues = false;
-                        return;
+                        return; 
                     }
 
-#if DEBUG
-                    //Console.Title = $"({TActivePlayerName}) {TChampionName}";
-#endif
+
+                    Console.Title = $"({ActivePlayerName}) {ChampionName}";
+
 
                     IsIntializingValues = false;
                 }
 
-//#if DEBUG
+                
                 Console.SetCursorPosition(0, 2);
                 Console.WriteLine($"当前攻速: {ClientAttackSpeed:0.00}\n" +
                     $"攻击速率: {GetSecondsPerAttack():0.00}s\n" +
                     $"前摇修正: {GetWindupDuration():0.00}s + {WindupBuffer:0.00}s delay\n" +
                     $"攻击后摇: {(GetSecondsPerAttack() - GetWindupDuration()):0.00}s\n");
 
-//#endif
+
+               // GameTime = gamestatsToken["gameTime"].Value<double>() * 1000d;
                 ClientAttackSpeed = activePlayerToken["championStats"]["attackSpeed"].Value<double>();
                 IsUpdatingAttackValues = false;
             }
