@@ -184,6 +184,7 @@ namespace Kiting_orb_walking_
                     if (ChampionName.Equals("复仇之矛"))
                     {
                         nextAttack = attackTime.AddSeconds(GetSecondsPerAttack() - GetBufferedWindupDuration());
+                        nextMove = attackTime.AddSeconds(1000);
                     }
                     else
                     {
