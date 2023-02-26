@@ -1,4 +1,4 @@
-﻿using LowLevelInput.Hooks;
+using LowLevelInput.Hooks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ namespace Kiting_orb_walking_
     public class Settings
     {
         public int ActivationKey { get; set; } = (int)VirtualKeyCode.Space;
+        public int Ping { get; set; } = (int)45;
 
         public void CreateNew(string path)
         {
@@ -21,7 +22,7 @@ namespace Kiting_orb_walking_
                     sw.WriteLine($"* \t{i} - {(VirtualKeyCode)i}");
                 }
                 sw.WriteLine("* \tActivationKey:走砍激活键");
-                sw.WriteLine("*/");
+                sw.WriteLine("* \tPing:游戏延迟\t*/");
                 sw.WriteLine(JsonConvert.SerializeObject(this));
             }
         }
@@ -29,6 +30,7 @@ namespace Kiting_orb_walking_
         public void Load(string path)
         {
             ActivationKey = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path)).ActivationKey;
+            Ping = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path)).Ping;
         }
     }
 }
