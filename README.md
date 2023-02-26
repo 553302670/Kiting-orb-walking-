@@ -20,6 +20,19 @@
 
 ## 使用方法
 
+
+Uploading bandicam 2023-02-26 23-47-37-010.mp4…
+
+
+https://user-images.githubusercontent.com/56016301/221421896-71eb288d-0688-4e32-ae39-ad5b648d1dd5.mp4
+
+
+
+https://user-images.githubusercontent.com/56016301/221421900-7d3da90e-79f4-4821-880f-7ca8f1e378c6.mp4
+
+
+
+
 请进游戏到设置修改:
 
 1. 快捷攻击型移动，选择设置成 A 键
