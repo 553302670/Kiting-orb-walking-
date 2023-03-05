@@ -26,6 +26,7 @@ namespace Kiting_orb_walking_
         private static bool IsExiting = false;
         private static bool IsIntializingValues = false;
         private static bool IsUpdatingAttackValues = false;
+        private static bool Canmove = false;
 
         private static readonly Settings CurrentSettings = new Settings();
         private static readonly WebClient Client = new WebClient();
@@ -101,7 +102,7 @@ namespace Kiting_orb_walking_
             Console.WriteLine("请输入游戏延迟(Ping)：");
             WindupBuffer = 1/double.Parse(Console.ReadLine())*2;
             */
-            WindupBuffer = CurrentSettings.Ping/1000d;
+            //WindupBuffer = CurrentSettings.Ping/1000d;
 
 
             Console.WriteLine($"请按住 '{(VirtualKeyCode)CurrentSettings.ActivationKey}键' 激活走砍");
@@ -160,11 +161,11 @@ namespace Kiting_orb_walking_
             var time = e.SignalTime;
 
 
-            // 下次输入计时器时间小于计时器时间运行
-            if (true || nextInput < time)
+            // 下次输入计时器时间小于计时器时间运行 true ||
+            if ( nextInput < time)
             {
                 // 当攻击时间小于计时器时间运行
-                if (nextAttack <= time)
+                if (nextAttack < time)
                 {
                     // 计算下次输入计时器时间 = 当前时间 + 攻击频率
                     nextInput = time.AddSeconds(MinInputDelay);
@@ -178,26 +179,28 @@ namespace Kiting_orb_walking_
                     // 更新攻击计时器时间
                     var attackTime = DateTime.Now;
 
-                    // 计算下次移动时间 = 前摇 + Ping值补偿
-                    nextMove = attackTime.AddSeconds(GetBufferedWindupDuration());
-                    // 计算下次攻击时间 = 每秒攻击次数
+
+                    // 计算下次攻击时间 = 每秒攻击次数   GetWindupDuration()
                     if (ChampionName.Equals("复仇之矛"))
                     {
-                        nextAttack = attackTime.AddSeconds(GetSecondsPerAttack() - GetBufferedWindupDuration());
-                        nextMove = attackTime.AddSeconds(1000);
+                        nextAttack = attackTime.AddSeconds(MinInputDelay);
+                        Canmove = false;
                     }
                     else
                     {
+                        // 计算下次移动时间 = 前摇 + Ping值补偿
+                        nextMove = attackTime.AddSeconds(GetBufferedWindupDuration());
                         nextAttack = attackTime.AddSeconds(GetSecondsPerAttack());
+                        Canmove = true;
                     }
                     
                 }
                 // 当移动时间小于计时器时间运行GetSecondsPerAttack()
-                else if (nextMove < time)
+                else if (Canmove & nextMove < time)
                 {
                     // 计算下次输入计时器时间 = 当前时间 + 攻击频率
                     nextInput = time.AddSeconds(MinInputDelay);
-                    nextMove = nextMove.AddSeconds(GetSecondsPerAttack()- GetWindupDuration());
+              
                     // 移动操作
                     InputSimulator.Mouse.MouseClick(InputSimulator.Mouse.Buttons.Right);
                     
