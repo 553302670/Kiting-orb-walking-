@@ -22,7 +22,7 @@ namespace Kiting_orb_walking_
                     sw.WriteLine($"* \t{i} - {(VirtualKeyCode)i}");
                 }
                 sw.WriteLine("* \tActivationKey:走砍激活键");
-                sw.WriteLine("* \tPing:游戏延迟\t*/");
+                //sw.WriteLine("* \tPing:游戏延迟\t*/");
                 sw.WriteLine(JsonConvert.SerializeObject(this));
             }
         }
@@ -30,7 +30,7 @@ namespace Kiting_orb_walking_
         public void Load(string path)
         {
             ActivationKey = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path)).ActivationKey;
-            Ping = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path)).Ping;
+            //Ping = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path)).Ping;
         }
     }
 }
